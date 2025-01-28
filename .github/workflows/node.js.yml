@@ -1,6 +1,3 @@
-# GitHub Actions workflow voor een Node.js project
-# Voert een clean install uit, bouwt de code en draait tests op meerdere Node-versies
-
 name: Node.js CI
 
 on:
@@ -15,24 +12,25 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [18.x, 20.x] # Gebruik alleen stabiele versies
+        node-version: [18.x, 20.x, 22.x]
 
     steps:
-    - name: Haal repository op
-      uses: actions/checkout@v4
+    - uses: actions/checkout@v4
 
-    - name: Installeer Node.js ${{ matrix.node-version }}
+    - name: Use Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v4
       with:
         node-version: ${{ matrix.node-version }}
-        check-latest: true
         cache: 'npm'
 
-    - name: Installeer afhankelijkheden
-      run: npm ci
+    # Fix: Check of package-lock.json bestaat, zo niet, voer npm install uit
+    - name: Controleer of package-lock.json bestaat
+      run: |
+        if [ ! -f package-lock.json ]; then
+          echo "package-lock.json ontbreekt, npm install uitvoeren..."
+          npm install
+        fi
 
-    - name: Bouw de applicatie (indien van toepassing)
-      run: npm run build --if-present
-
-    - name: Voer tests uit
-      run: npm test
+    - run: npm ci
+    - run: npm run build --if-present
+    - run: npm test
